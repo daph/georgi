@@ -1,4 +1,4 @@
-defmodule AudioBot do
+defmodule Georgi do
   def tokenize(line) do
     line
     |> String.downcase

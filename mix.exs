@@ -1,8 +1,8 @@
-defmodule AudioBot.Mixfile do
+defmodule Georgi.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :audiobot,
+    [app: :georgi,
      version: "0.0.1",
      elixir: "~> 1.1",
      build_embedded: Mix.env == :prod,
