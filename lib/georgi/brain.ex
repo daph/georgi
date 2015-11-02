@@ -4,6 +4,7 @@ defmodule Georgi.Brain do
     |> String.downcase
     |> String.split(" ")
     |> Enum.map(&String.strip(&1))
+    |> Enum.map(fn(x) -> if x =~ ~r/[\!\.\?]/ do x <> "STOP" else x end end)
     |> Enum.map(&(String.replace(&1, ~r/[\p{P}\p{S}]/, "")))
     |> Enum.reject(&(&1 == ""))
   end
@@ -35,8 +36,13 @@ defmodule Georgi.Brain do
 
   def make_sentence(memory, length) do
     {{w1, w2}, _} = Enum.random(memory)
-    make_sentence(memory, length-2, {w1, w2}, [w1, w2])
-    |> Enum.join(" ")
+    if String.contains?(w1, "STOP") or
+    String.contains?(w2, "STOP") do
+      make_sentence(memory, length)
+    else
+      make_sentence(memory, length-2, {w1, w2}, [w1, w2])
+      |> Enum.join(" ")
+    end
   end
 
   defp make_sentence(_memory, 0, _, acc), do: acc
@@ -46,7 +52,12 @@ defmodule Georgi.Brain do
         acc
       _ ->
         nw = Enum.random(list)
-        make_sentence(memory, length-1, {w2, nw}, acc ++ [nw])
+        if String.contains?(nw, "STOP") do
+          nw_stop = String.replace(nw, "STOP", ".")
+          make_sentence(memory, 0, {}, acc ++ [nw_stop])
+        else
+          make_sentence(memory, length-1, {w2, nw}, acc ++ [nw])
+        end
     end
   end
 
@@ -54,6 +65,6 @@ defmodule Georgi.Brain do
     File.stream!(file)
     |> Enum.map(&tokenize(&1))
     |> List.flatten
-    |> insert(%{}) 
+    |> insert(%{})
   end
 end
