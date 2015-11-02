@@ -7,13 +7,17 @@ defmodule Georgi.Slack do
     {:ok, initial_state}
   end
 
+  def handle_message(message = %{subtype: "message_deleted"}, _slack, state) do
+    {:ok, state}
+  end
+
   def handle_message(message = %{subtype: "message_changed"}, _slack, state) do
     {:ok, state}
   end
 
   def handle_message(message = %{type: "message"}, slack, state) do
     if message.user != slack.me.name do
-      if String.contains?(message.text, slack.me.name)
+      if String.downcase(message.text) |> String.contains?(slack.me.name)
          or String.contains?(message.text, slack.me.id) do
            sentence = GenServer.call(state, {:make_sentence, 300})
            send_message(sentence, message.channel, slack)
