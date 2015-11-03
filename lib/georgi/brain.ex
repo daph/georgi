@@ -68,10 +68,15 @@ defmodule Georgi.Brain do
     end
   end
 
-  def load_text(file) do
-    File.stream!(file)
+  def load_text(file, table \\ :undefined) do
+    file = File.stream!(file)
     |> Enum.map(&tokenize(&1))
     |> List.flatten
-    |> insert(:ets.new(:memory_table, [:set, :protected, {:read_concurrency, :true}]))
+    case table do
+      :undefined ->
+        insert(file, :ets.new(:memory_table, [:set, :protected, {:read_concurrency, :true}]))
+      _ ->
+        insert(file, table)
+    end
   end
 end
