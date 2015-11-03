@@ -7,11 +7,11 @@ defmodule Georgi.Slack do
     {:ok, initial_state}
   end
 
-  def handle_message(message = %{subtype: "message_deleted"}, _slack, state) do
+  def handle_message(_message = %{subtype: "message_deleted"}, _slack, state) do
     {:ok, state}
   end
 
-  def handle_message(message = %{subtype: "message_changed"}, _slack, state) do
+  def handle_message(_message = %{subtype: "message_changed"}, _slack, state) do
     {:ok, state}
   end
 

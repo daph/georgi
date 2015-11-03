@@ -9,54 +9,55 @@ defmodule Georgi.Brain do
     |> Enum.reject(&(&1 == ""))
   end
 
-  def insert([w1|[w2|[nw|t]]], memory) do
+  def insert([w1|[w2|[nw|t]]], table) do
     word_pair = {w1, w2}
-    case memory do
-      %{^word_pair => word_list} ->
-        new_memory = Map.put(memory, word_pair, [nw|word_list])
-        insert([w2|[nw|t]], new_memory)
-      _ ->
-        new_memory = Map.put(memory, word_pair, [nw])
-        insert([w2|[nw|t]], new_memory)
-    end
+    case :ets.member(table, word_pair) do
+      true ->
+        list = :ets.lookup_element(table, word_pair, 2)
+        :ets.insert(table, {word_pair, [nw|list]})
+      false ->
+        :ets.insert(table, {word_pair, [nw]})
+      end
+
+      insert([w2|[nw|t]], table)
   end
-  def insert([w1|[w2|[]]], memory) do
+  def insert([w1|[w2|[]]], table) do
     word_pair = {w1, w2}
-    case memory do
-      %{^word_pair => _} ->
-        memory
-      _ ->
-        new_memory = Map.put(memory, word_pair, [])
-        new_memory
+    unless :ets.member(table, word_pair) do
+      :ets.insert(table, {word_pair, []})
     end
+    table
   end
-  def insert(_, memory) do
-    memory
+  def insert(_, table) do
+    table
   end
 
-  def make_sentence(memory, length) do
-    {{w1, w2}, _} = Enum.random(memory)
+  # length here actually really operates as max length
+  def make_sentence(table, length) do
+    # This has to traverse the whole table. Ew.
+    [{w1, w2}|_] = :ets.match(table, {:'$1', :'_'}) |> Enum.random
     if String.contains?(w1, "STOP") or
     String.contains?(w2, "STOP") do
-      make_sentence(memory, length)
+      make_sentence(table, length)
     else
-      make_sentence(memory, length-2, {w1, w2}, [w1, w2])
+      make_sentence(table, length-2, {w1, w2}, [w1, w2])
       |> Enum.join(" ")
     end
   end
 
-  defp make_sentence(_memory, 0, _, acc), do: acc
-  defp make_sentence(memory, length, {w1, w2}, acc) do
-    case list = memory[{w1, w2}] do
-      [] ->
+  defp make_sentence(_table, 0, _, acc), do: acc
+  defp make_sentence(table, length, {w1, w2}, acc) do
+    word_pair = {w1, w2}
+    case :ets.member(table, word_pair) do
+      false ->
         acc
-      _ ->
-        nw = Enum.random(list)
+      true ->
+        nw = :ets.lookup_element(table, word_pair, 2) |> Enum.random
         if String.contains?(nw, "STOP") do
           nw_stop = String.replace(nw, "STOP", ".")
-          make_sentence(memory, 0, {}, acc ++ [nw_stop])
+          make_sentence(table, 0, {}, acc ++ [nw_stop])
         else
-          make_sentence(memory, length-1, {w2, nw}, acc ++ [nw])
+          make_sentence(table, length-1, {w2, nw}, acc ++ [nw])
         end
     end
   end
@@ -65,6 +66,6 @@ defmodule Georgi.Brain do
     File.stream!(file)
     |> Enum.map(&tokenize(&1))
     |> List.flatten
-    |> insert(%{})
+    |> insert(:ets.new(:memory_table, [:set, :protected, {:read_concurrency, :true}]))
   end
 end
