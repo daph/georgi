@@ -10,7 +10,10 @@ defmodule Georgi.Brain do
   end
 
   def insert([w1|[w2|[nw|t]]], table) do
-    word_pair = {w1, w2}
+    word_pair = {
+      String.replace(w1, "STOP", ""),
+      String.replace(w2, "STOP", "")
+    }
     case :ets.member(table, word_pair) do
       true ->
         list = :ets.lookup_element(table, word_pair, 2)
@@ -22,7 +25,10 @@ defmodule Georgi.Brain do
       insert([w2|[nw|t]], table)
   end
   def insert([w1|[w2|[]]], table) do
-    word_pair = {w1, w2}
+    word_pair = {
+      String.replace(w1, "STOP", ""),
+      String.replace(w2, "STOP", "")
+    }
     unless :ets.member(table, word_pair) do
       :ets.insert(table, {word_pair, []})
     end
