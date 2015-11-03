@@ -2,6 +2,7 @@ defmodule Georgi.Brain.Server do
   use GenServer
 
   def init(file) do
+    :random.seed(:os.timestamp)
     table = Georgi.Brain.load_text(file)
     {:ok, table}
   end
