@@ -7,6 +7,7 @@ defmodule Georgi.Brain do
     |> Enum.map(fn(x) -> if x =~ ~r/[\!\.\?]/ do x <> "STOP" else x end end)
     |> Enum.map(&(String.replace(&1, ~r/[\p{P}\p{S}]/, "")))
     |> Enum.reject(&(&1 == ""))
+    |> Enum.reject(&(&1 == "STOP"))
   end
 
   def insert([w1|[w2|[nw|t]]], table) do
