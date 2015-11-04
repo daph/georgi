@@ -14,7 +14,6 @@ defmodule Georgi.Brain.Server do
     {:ok, table}
   end
 
-
   def handle_call({:make_sentence, length}, _from, table) do
     sentence = Georgi.Brain.make_sentence(table, length)
     {:reply, sentence, table}
