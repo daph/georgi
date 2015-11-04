@@ -1,19 +1,7 @@
 # Georgi
 
-**TODO: Add description**
+This is a toy markov chain chatbot for slack, written in Elixir.
 
-## Installation
+If you would like to run it, rename config/example.prod.exs to config/prod.exs, put your slack token(s) in there, and change :corpus to point to your corpus text.
+After that run ```MIX_ENV=prod mix run --no-halt```
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed as:
-
-  1. Add georgi to your list of dependencies in `mix.exs`:
-
-        def deps do
-          [{:georgi, "~> 0.0.1"}]
-        end
-
-  2. Ensure georgi is started before your application:
-
-        def application do
-          [applications: [:georgi]]
-        end
