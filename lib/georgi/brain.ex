@@ -3,11 +3,18 @@ defmodule Georgi.Brain do
     line
     |> String.downcase
     |> String.split(" ")
-    |> Enum.map(&String.strip(&1))
-    |> Enum.map(fn(x) -> if x =~ ~r/[\!\.\?]/ do x <> "STOP" else x end end)
-    |> Enum.map(&(String.replace(&1, ~r/[\p{P}\p{S}]/, "")))
-    |> Enum.reject(&(&1 == ""))
-    |> Enum.reject(&(&1 == "STOP"))
+    |> Enum.map(&token_rules(&1))
+    |> Enum.reject(&(&1 == "" or &1 == "STOP"))
+  end
+
+  def token_rules(w) do
+    stripped = String.strip(w)
+    word = if stripped =~ ~r/[\!\.\?]/ do
+      stripped <> "STOP"
+    else
+      stripped
+    end
+    String.replace(word, ~r/[\p{P}\p{S}]/, "")
   end
 
   def insert([w1|[w2|[nw|t]]], table) do
