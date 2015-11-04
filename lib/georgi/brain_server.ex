@@ -1,6 +1,9 @@
 defmodule Georgi.Brain.Server do
   use GenServer
 
+  def start_link(state, opts \\ []) do
+    {:ok, pid} = GenServer.start_link(__MODULE__, state, opts)
+  end
   def init({file, :public}) do
     :random.seed(:os.timestamp)
     table = :ets.new(:memory_table, [:set, :public, {:read_concurrency, :true}])

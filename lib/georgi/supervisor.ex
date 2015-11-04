@@ -7,4 +7,17 @@ defmodule Georgi.Supervisor do
 
   @brain_name Georgi.Brain.Server
 
+  def init(:ok) do
+    corpus = Application.get_env(:georgi, :corpus)
+    children = [
+      worker(Georgi.Brain.Server, [[corpus], [name: @brain_name]])
+    ]
+    tokens = Application.get_env(:georgi, :slack_tokens)
+
+    slack_children = for x <- tokens do
+      worker(Georgi.Slack, [x, @brain_name], [id: x])
+    end
+
+    supervise(children ++ slack_children, strategy: :one_for_one)
+  end
 end
