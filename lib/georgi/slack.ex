@@ -19,8 +19,8 @@ defmodule Georgi.Slack do
     if message.user != slack.me.name do
       if String.downcase(message.text) |> String.contains?(slack.me.name)
          or String.contains?(message.text, slack.me.id) do
-           sentence = GenServer.call(state, {:make_sentence, 300})
-           send_message(sentence, message.channel, slack)
+           Georgi.Brain.Server.make_sentence
+           |> send_message(message.channel, slack)
          end
     end
     {:ok, state}
