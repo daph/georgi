@@ -7,7 +7,7 @@ defmodule Georgi.Brain do
     |> Enum.reject(&(&1 == "" or &1 == "STOP"))
   end
 
-  def token_rules(w) do
+  defp token_rules(w) do
     stripped = String.strip(w)
     word = if stripped =~ ~r/[\!\.\?]/ do
       stripped <> "STOP"
@@ -74,6 +74,28 @@ defmodule Georgi.Brain do
           make_sentence(table, length-1, {w2, nw}, acc ++ [nw])
         end
     end
+  end
+
+  def make_sentence_context(table, length, message) do
+    case tokenize(message) |> find_context_start(table) do
+      :no_context ->
+        make_sentence(table, length)
+      {w1, w2} ->
+        make_sentence(table, length-2, {w1, w2}, [w1, w2])
+        |> Enum.join(" ")
+    end
+  end
+
+  defp find_context_start([w1|[w2|t]], table) do
+    word_pair = {w1, w2}
+    if :ets.member(table, word_pair) do
+      word_pair
+    else
+      find_context_start([w2|t], table)
+    end
+  end
+  defp find_context_start(_, _table) do
+    :no_context
   end
 
   def load_text(file, table \\ :undefined) do

@@ -19,8 +19,18 @@ defmodule Georgi.Slack do
     if message.user != slack.me.name do
       if String.downcase(message.text) |> String.contains?(slack.me.name)
          or String.contains?(message.text, slack.me.id) do
-           Georgi.Brain.Server.make_sentence
-           |> send_message(message.channel, slack)
+           clean_msg = message.text
+           |> String.downcase
+           |> String.replace(slack.me.name, "")
+           |> String.replace(slack.me.id, "")
+
+           if clean_msg == "" do
+             Georgi.Brain.Server.make_sentence
+             |> send_message(message.channel, slack)
+           else
+             Georgi.Brain.Server.make_sentence(clean_msg)
+             |> send_message(message.channel, slack)
+           end
          end
     end
     {:ok, state}

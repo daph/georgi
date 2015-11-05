@@ -9,6 +9,10 @@ defmodule Georgi.Brain.Server do
     GenServer.call(__MODULE__, {:make_sentence, 300})
   end
 
+  def make_sentence(message) do
+    GenServer.call(__MODULE__, {:make_sentence, 300, message})
+  end
+
   def init({file, :public}) do
     :random.seed(:os.timestamp)
     table = :ets.new(:memory_table, [:set, :public, {:read_concurrency, :true}])
@@ -24,6 +28,11 @@ defmodule Georgi.Brain.Server do
 
   def handle_call({:make_sentence, length}, _from, table) do
     sentence = Georgi.Brain.make_sentence(table, length)
+    {:reply, sentence, table}
+  end
+
+  def handle_call({:make_sentence, length, msg}, _from, table) do
+    sentence = Georgi.Brain.make_sentence_context(table, length, msg)
     {:reply, sentence, table}
   end
 end
