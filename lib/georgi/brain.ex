@@ -17,61 +17,47 @@ defmodule Georgi.Brain do
     String.replace(word, ~r/[\p{P}\p{S}]/, "")
   end
 
-  def insert([w1|[w2|[nw|t]]], table) do
-    word_pair = {
-      String.replace(w1, "STOP", ""),
-      String.replace(w2, "STOP", "")
-    }
-    case :ets.member(table, word_pair) do
-      true ->
-        list = :ets.lookup_element(table, word_pair, 2)
-        :ets.insert(table, {word_pair, [nw|list]})
-      false ->
-        :ets.insert(table, {word_pair, [nw]})
-      end
+  def insert(list, table, tuplen) when length(list) > tuplen do
+    key_words = Enum.take(list, tuplen)
+    word_tuple = key_words |> Enum.map(&String.replace(&1, "STOP", "")) |> List.to_tuple
 
-      insert([w2|[nw|t]], table)
+    [nw|_] = Enum.drop(list, tuplen)
+    [_|next_list] = list
+
+    case :ets.member(table, word_tuple) do
+      true ->
+        word_list = :ets.lookup_element(table, word_tuple, 2)
+        :ets.insert(table, {word_tuple, [nw|word_list]})
+      false ->
+        :ets.insert(table, {word_tuple, [nw]})
+      end
+    insert(next_list, table, tuplen)
   end
-  def insert([w1|[w2|[]]], table) do
-    word_pair = {
-      String.replace(w1, "STOP", ""),
-      String.replace(w2, "STOP", "")
-    }
-    unless :ets.member(table, word_pair) do
-      :ets.insert(table, {word_pair, []})
-    end
-    table
-  end
-  def insert(_, table) do
+  def insert(_, table, _) do
     table
   end
 
   # length here actually really operates as max length
   def make_sentence(table, length) do
     # This has to traverse the whole table. Ew.
-    [{w1, w2}|_] = :ets.match(table, {:'$1', :'_'}) |> Enum.random
-    if String.contains?(w1, "STOP") or
-    String.contains?(w2, "STOP") do
-      make_sentence(table, length)
-    else
-      make_sentence(table, length-2, {w1, w2}, [w1, w2])
-      |> Enum.join(" ")
-    end
+    [word_tuple|_] = :ets.match(table, {:'$1', :'_'}) |> Enum.random
+    make_sentence(table, length-2, word_tuple, Tuple.to_list(word_tuple)) |> Enum.join(" ")
   end
 
   defp make_sentence(_table, 0, _, acc), do: acc
-  defp make_sentence(table, length, {w1, w2}, acc) do
-    word_pair = {w1, w2}
-    case :ets.member(table, word_pair) do
+  defp make_sentence(table, length, word_tuple, acc) do
+
+    case :ets.member(table, word_tuple) do
       false ->
         acc
       true ->
-        nw = :ets.lookup_element(table, word_pair, 2) |> Enum.random
+        nw = :ets.lookup_element(table, word_tuple, 2) |> Enum.random
+        next_tuple = word_tuple |> Tuple.delete_at(0) |> Tuple.append(nw)
         if String.contains?(nw, "STOP") do
           nw_stop = String.replace(nw, "STOP", ".")
           make_sentence(table, 0, {}, acc ++ [nw_stop])
         else
-          make_sentence(table, length-1, {w2, nw}, acc ++ [nw])
+          make_sentence(table, length-1, next_tuple, acc ++ [nw])
         end
     end
   end
@@ -80,33 +66,35 @@ defmodule Georgi.Brain do
     case tokenize(message) |> find_context_start(table) do
       :no_context ->
         make_sentence(table, length)
-      {w1, w2} ->
-        make_sentence(table, length-2, {w1, w2}, [w1, w2])
+      word_tuple ->
+        make_sentence(table, length-2, word_tuple, Tuple.to_list(word_tuple))
         |> Enum.join(" ")
     end
   end
 
-  defp find_context_start([w1|[w2|t]], table) do
-    word_pair = {w1, w2}
-    if :ets.member(table, word_pair) do
-      word_pair
+  defp find_context_start(list, table) do
+    tuplen = :ets.first(table) |> tuple_size
+    if length(list) < tuplen do
+      :no_context
     else
-      find_context_start([w2|t], table)
+      word_tuple = list |> Enum.take(tuplen) |> List.to_tuple
+      if :ets.member(table, word_tuple) do
+        word_tuple
+      else
+        find_context_start(Enum.drop(list, 1), table)
+      end
     end
   end
-  defp find_context_start(_, _table) do
-    :no_context
-  end
 
-  def load_text(file, table \\ :undefined) do
+  def load_text(file, tuple_length, table \\ :undefined) do
     file = File.stream!(file)
     |> Enum.map(&tokenize(&1))
     |> List.flatten
     case table do
       :undefined ->
-        insert(file, :ets.new(:memory_table, [:set, :protected, {:read_concurrency, :true}]))
+        insert(file, :ets.new(:memory_table, [:set, :protected, {:read_concurrency, :true}]), tuple_length)
       _ ->
-        insert(file, table)
+        insert(file, table, tuple_length)
     end
   end
 end

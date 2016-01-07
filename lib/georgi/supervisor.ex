@@ -9,8 +9,9 @@ defmodule Georgi.Supervisor do
 
   def init(:ok) do
     corpus = Application.get_env(:georgi, :corpus)
+    tuple_length = Application.get_env(:georgi, :tuple_length)
     children = [
-      worker(Georgi.Brain.Server, [[corpus], [name: @brain_name]])
+      worker(Georgi.Brain.Server, [{corpus, tuple_length}, [name: @brain_name]])
     ]
     tokens = Application.get_env(:georgi, :slack_tokens)
 

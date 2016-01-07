@@ -13,16 +13,16 @@ defmodule Georgi.Brain.Server do
     GenServer.call(__MODULE__, {:make_sentence, 300, message})
   end
 
-  def init({file, :public}) do
+  def init({file, tuple_length, :public}) do
     :random.seed(:os.timestamp)
     table = :ets.new(:memory_table, [:set, :public, {:read_concurrency, :true}])
-    Georgi.Brain.load_text(file, table)
+    Georgi.Brain.load_text(file, tuple_length, table)
     {:ok, table}
   end
 
-  def init(file) do
+  def init({file, tuple_length}) do
     :random.seed(:os.timestamp)
-    table = Georgi.Brain.load_text(file)
+    table = Georgi.Brain.load_text(file, tuple_length)
     {:ok, table}
   end
 
