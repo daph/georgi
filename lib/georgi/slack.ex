@@ -1,21 +1,21 @@
 defmodule Georgi.Slack do
   use Slack
+  require Logger
 
-  def init(initial_state, slack) do
-    IO.puts "Connected as #{slack.me.name}"
-    IO.inspect initial_state
-    {:ok, initial_state}
-  end
-
-  def handle_message(_message = %{subtype: "message_deleted"}, _slack, state) do
+  def handle_connect(slack, state) do
+    Logger.info "Connected to slack as #{slack.me.name}"
     {:ok, state}
   end
 
-  def handle_message(_message = %{subtype: "message_changed"}, _slack, state) do
+  def handle_event(_message = %{subtype: "message_deleted"}, _slack, state) do
     {:ok, state}
   end
 
-  def handle_message(message = %{type: "message"}, slack, state) do
+  def handle_event(_message = %{subtype: "message_changed"}, _slack, state) do
+    {:ok, state}
+  end
+
+  def handle_event(message = %{type: "message"}, slack, state) do
     if message.user != slack.me.name do
       if String.downcase(message.text) |> String.contains?(slack.me.name)
          or String.contains?(message.text, slack.me.id) do
@@ -36,7 +36,11 @@ defmodule Georgi.Slack do
     {:ok, state}
   end
 
-  def handle_message(_message, _slack, state) do
+  def handle_event(_message, _slack, state) do
+    {:ok, state}
+  end
+
+  def handle_info(_, _, state) do
     {:ok, state}
   end
 end

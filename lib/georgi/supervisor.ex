@@ -16,7 +16,7 @@ defmodule Georgi.Supervisor do
     tokens = Application.get_env(:georgi, :slack_tokens)
 
     slack_children = for x <- tokens do
-      worker(Georgi.Slack, [x, []], [id: x])
+      worker(Slack.Bot, [Georgi.Slack, [], x], [id: x])
     end
 
     supervise(children ++ slack_children, strategy: :one_for_one)

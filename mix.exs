@@ -4,10 +4,10 @@ defmodule Georgi.Mixfile do
   def project do
     [app: :georgi,
      version: "0.0.1",
-     elixir: "~> 1.1",
+     elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps]
+     deps: deps()]
   end
 
   # Configuration for the OTP application
@@ -15,7 +15,7 @@ defmodule Georgi.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     [ mod: {Georgi, []},
-      applications: [:logger, :slack]]
+      extra_applications: [:logger, :slack]]
   end
 
   # Dependencies can be Hex packages:
@@ -27,8 +27,7 @@ defmodule Georgi.Mixfile do
   #   {:mydep, git: "https://github.com/elixir-lang/mydep.git", tag: "0.1.0"}
   #
   # Type "mix help deps" for more examples and options
-  defp deps do
-    [{:slack, "~> 0.3.0"},
-     {:websocket_client, git: "https://github.com/jeremyong/websocket_client"}]
+  def deps do
+    [{:slack, "~> 0.9.0"}]
   end
 end
