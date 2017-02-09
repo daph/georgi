@@ -1,5 +1,6 @@
 defmodule Georgi.Brain.Server do
   use GenServer
+  require Logger
 
   def start_link(state, opts \\ []) do
     GenServer.start_link(__MODULE__, state, opts)
@@ -14,6 +15,7 @@ defmodule Georgi.Brain.Server do
   end
 
   def init({file, tuple_length, :public}) do
+    Logger.info "Initializing brain"
     :rand.seed(:exsplus, :os.timestamp)
     table = :ets.new(:memory_table, [:set, :public, {:read_concurrency, :true}])
     Georgi.Brain.load_text(file, tuple_length, table)
@@ -21,6 +23,7 @@ defmodule Georgi.Brain.Server do
   end
 
   def init({file, tuple_length}) do
+    Logger.info "Initializing brain"
     :rand.seed(:exsplus, :os.timestamp)
     table = Georgi.Brain.load_text(file, tuple_length)
     {:ok, table}

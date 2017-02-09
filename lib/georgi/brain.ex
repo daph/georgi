@@ -1,25 +1,25 @@
 defmodule Georgi.Brain do
+  require Logger
+
   def tokenize(line) do
     line
-    |> String.downcase
     |> String.split(" ")
-    |> Enum.map(&token_rules(&1))
-    |> Enum.reject(&(&1 == "" or &1 == "STOP"))
+    |> Enum.reduce([], &token_rules/2)
+    |> Enum.reverse
   end
 
-  defp token_rules(w) do
+  defp token_rules(w, acc) do
+    punc = [".", "?", "!"]
     stripped = String.strip(w)
-    word = if stripped =~ ~r/[\!\.\?]/ do
-      stripped <> "STOP"
-    else
-      stripped
+    cond do
+      stripped == ""                    -> acc
+      String.ends_with?(stripped, punc) -> ["<!START!>"|["<!STOP!>"|[w|acc]]]
+      true                              -> [w|acc]
     end
-    String.replace(word, ~r/[\p{P}\p{S}]/, "")
   end
 
   def insert(list, table, tuplen) when length(list) > tuplen do
-    key_words = Enum.take(list, tuplen)
-    word_tuple = key_words |> Enum.map(&String.replace(&1, "STOP", "")) |> List.to_tuple
+    word_tuple = Enum.take(list, tuplen) |> List.to_tuple
 
     [nw|_] = Enum.drop(list, tuplen)
     [_|next_list] = list
@@ -34,14 +34,18 @@ defmodule Georgi.Brain do
     insert(next_list, table, tuplen)
   end
   def insert(_, table, _) do
+    Logger.info "Done Inserting "
     table
   end
 
   # length here actually really operates as max length
   def make_sentence(table, length) do
-    # This has to traverse the whole table. Ew.
-    [word_tuple|_] = :ets.match(table, {:'$1', :'_'}) |> Enum.random
-    make_sentence(table, length-2, word_tuple, Tuple.to_list(word_tuple)) |> Enum.join(" ")
+    # Original fun2ms: :ets.fun2ms(fn({{w1,w2}, _}) when w1 == "<!START!>" -> {w1,w2} end)
+    query = [{{{:"$1", :"$2"}, :_}, [{:==, :"$1", "<!START!>"}], [{{:"$1", :"$2"}}]}]
+    word_tuple = :ets.select(table, query) |> Enum.random
+    make_sentence(table, length-2, word_tuple, Tuple.to_list(word_tuple))
+    |> Enum.drop(1)
+    |> Enum.join(" ")
   end
 
   defp make_sentence(_table, 0, _, acc), do: acc
@@ -53,9 +57,8 @@ defmodule Georgi.Brain do
       true ->
         nw = :ets.lookup_element(table, word_tuple, 2) |> Enum.random
         next_tuple = word_tuple |> Tuple.delete_at(0) |> Tuple.append(nw)
-        if String.contains?(nw, "STOP") do
-          nw_stop = String.replace(nw, "STOP", ".")
-          make_sentence(table, 0, {}, acc ++ [nw_stop])
+        if nw == "<!STOP!>" do
+          make_sentence(table, 0, {}, acc)
         else
           make_sentence(table, length-1, next_tuple, acc ++ [nw])
         end
