@@ -10,7 +10,8 @@ defmodule Georgi.Brain do
 
   defp token_rules(w, acc) do
     punc = [".", "?", "!"]
-    stripped = String.strip(w)
+    # Strip white space and remove any newlines that snuck in
+    stripped = String.strip(w) |> String.replace("\n", "")
     cond do
       stripped == ""                    -> acc
       String.ends_with?(stripped, punc) -> ["<!START!>"|["<!STOP!>"|[w|acc]]]
