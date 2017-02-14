@@ -15,7 +15,7 @@ defmodule Georgi.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     [ mod: {Georgi, []},
-      extra_applications: [:logger, :slack]]
+      extra_applications: [:logger, :runtime_tools]]
   end
 
   # Dependencies can be Hex packages:
@@ -28,6 +28,7 @@ defmodule Georgi.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   def deps do
-    [{:slack, "~> 0.9.0"}]
+    [{:slack, "~> 0.9.0"},
+     {:distillery, "~> 1.0", runtime: false}]
   end
 end
