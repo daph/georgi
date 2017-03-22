@@ -15,6 +15,10 @@ defmodule Georgi.Slack do
     {:ok, state}
   end
 
+  def handle_event(_message= %{subtype: "message_replied"}, _slack, state) do
+    {:ok, state}
+  end
+
   def handle_event(message = %{type: "message"}, slack, state) do
     if message.user != slack.me.name do
       if String.downcase(message.text) |> String.contains?(slack.me.name)
