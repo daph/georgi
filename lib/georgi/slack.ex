@@ -9,7 +9,7 @@ defmodule Georgi.Slack do
 
   def handle_event(message = %{type: "message", subtype: "bot_message"}, slack, state) do
     message.text
-    |> respond(message.user, slack.me.name, slack.me.id)
+    |> respond(message.bot_id, slack.me.name, slack.me.id)
     |> send_message(message.channel, slack)
     {:ok, state}
   end
