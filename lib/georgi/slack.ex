@@ -7,44 +7,44 @@ defmodule Georgi.Slack do
     {:ok, state}
   end
 
-  def handle_event(_message = %{subtype: "message_deleted"}, _slack, state) do
+  def handle_event(message = %{type: "message", subtype: "bot_message"}, slack, state) do
+    message.text
+    |> respond(message.user, slack.me.name, slack.me.id)
+    |> send_message(message.channel, slack)
     {:ok, state}
   end
-
-  def handle_event(_message = %{subtype: "message_changed"}, _slack, state) do
+  def handle_event(_message = %{subtype: _subtype}, _slack, state) do
     {:ok, state}
   end
-
-  def handle_event(_message= %{subtype: "message_replied"}, _slack, state) do
-    {:ok, state}
-  end
-
   def handle_event(message = %{type: "message"}, slack, state) do
-    if message.user != slack.me.name do
-      if String.downcase(message.text) |> String.contains?(slack.me.name)
-         or String.contains?(message.text, slack.me.id) do
-           clean_msg = message.text
-           |> String.downcase
-           |> String.replace(slack.me.name, "")
-           |> String.replace(slack.me.id, "")
-
-           if clean_msg == "" do
-             Georgi.Brain.Server.make_sentence
-             |> send_message(message.channel, slack)
-           else
-             Georgi.Brain.Server.make_sentence(clean_msg)
-             |> send_message(message.channel, slack)
-           end
-         end
-    end
+    message.text
+    |> respond(message.user, slack.me.name, slack.me.id)
+    |> send_message(message.channel, slack)
     {:ok, state}
   end
-
   def handle_event(_message, _slack, state) do
     {:ok, state}
   end
 
   def handle_info(_, _, state) do
     {:ok, state}
+  end
+
+  def respond(text, their_id, my_name, my_id) do
+    if their_id != my_id do
+      if String.downcase(text) |> String.contains?(my_name)
+      or String.contains?(text, my_id) do
+        clean_msg = text
+        |> String.downcase
+        |> String.replace(my_name, "")
+        |> String.replace(my_id, "")
+
+        if clean_msg == "" do
+          Georgi.Brain.Server.make_sentence
+        else
+          Georgi.Brain.Server.make_sentence(clean_msg)
+        end
+      end
+    end
   end
 end
